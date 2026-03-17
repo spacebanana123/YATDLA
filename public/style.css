@@ -1,0 +1,28 @@
+:root {
+/* CSS HEX */
+--midnight-violet: #2e0014ff;
+--espresso: #442220ff;
+--palm-leaf: #809848ff;
+--muted-olive: #b0ca87ff;
+--celadon: #b5deadff;
+}
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+.button {
+	background-color: var(--palm-leaf);
+	border: var(--midnight-violet);
+	color: white;
+	padding: 15px 15px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	cursor: pointer;
+	border-radius: 10px;
+}
+.button:hover{
+	background-color: var(--muted-olive);
+}
