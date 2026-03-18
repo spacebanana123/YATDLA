@@ -5,16 +5,19 @@
 --palm-leaf: #809848ff;
 --muted-olive: #b0ca87ff;
 --celadon: #b5deadff;
+--glamour-white: #fffbed;
 }
 
 body {
 	font-family: Arial, Helvetica, sans-serif;
+	color:#444;
+	line-height:1.6;
 }
 
 .button {
 	background-color: var(--palm-leaf);
 	border: var(--midnight-violet);
-	color: white;
+	color: var(--glamour-white);
 	padding: 15px 15px;
 	text-align: center;
 	text-decoration: none;
