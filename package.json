@@ -6,6 +6,7 @@
   "private": true,
   "main": "src/server.js",
   "scripts": {
+    "start": "wrangler dev",
     "fix": "eslint --fix \"**/*.js\"",
     "lint": "eslint \"**/*.js\""
   },
