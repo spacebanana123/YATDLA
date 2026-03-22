@@ -7,5 +7,6 @@ compatibility_date = "2024-03-20"
 binding = "YATDLA_KV"
 id = "355e30edc74f49b695f50769567a2ae9" # TODO: Create a KV namespace and replace this ID
 
-[site]
-bucket = "./public"
+[assets]
+directory = "./public"
+binding = "ASSETS"

@@ -1,10 +1,6 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { verify, sign } from 'hono/jwt';
-import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler';
-import manifestJSON from '__STATIC_CONTENT_MANIFEST';
-
-const assetManifest = JSON.parse(manifestJSON);
 
 type Env = {
 	YATDLA_KV: KVNamespace;
@@ -351,24 +347,24 @@ app.get('/api/calendar', async c => {
 
 // --- STATIC ASSET SERVING ---
 
-app.get('*', async (c) => {
-	try {
-		return await getAssetFromKV(
-			{
-				request: c.req.raw,
-				waitUntil: (promise) => c.executionCtx.waitUntil(promise),
-			},
-			{
-				ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-				ASSET_MANIFEST: assetManifest,
-			}
-		);
-	} catch (e) {
-		if (e instanceof NotFoundError) {
-			return new Response('Not Found', { status: 404 });
-		}
-		return new Response('Internal Server Error', { status: 500 });
-	}
-});
+// app.get('*', async (c) => {
+// 	try {
+// 		return await getAssetFromKV(
+// 			{
+// 				request: c.req.raw,
+// 				waitUntil: (promise) => c.executionCtx.waitUntil(promise),
+// 			},
+// 			{
+// 				ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
+// 				ASSET_MANIFEST: assetManifest,
+// 			}
+// 		);
+// 	} catch (e) {
+// 		if (e instanceof NotFoundError) {
+// 			return new Response('Not Found', { status: 404 });
+// 		}
+// 		return new Response('Internal Server Error', { status: 500 });
+// 	}
+// });
 
 export default app;
