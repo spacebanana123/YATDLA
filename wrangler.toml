@@ -2,11 +2,15 @@ name = "yatdla-backend"
 main = "src/index.ts"
 compatibility_date = "2024-03-20"
 
-# Binding for storing users and todos
-[[kv_namespaces]]
-binding = "YATDLA_KV"
-id = "355e30edc74f49b695f50769567a2ae9" # TODO: Create a KV namespace and replace this ID
+[[d1_databases]]
+binding = "YATDLA_DB"
+database_name = "yatdla-db"
+database_id = "6b633caa-99c5-4c2c-901e-9184918ff0b5"
 
 [assets]
 directory = "./public"
 binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "YATDLA_KV"
+id = "355e30edc74f49b695f50769567a2ae9"

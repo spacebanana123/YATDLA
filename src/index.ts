@@ -3,8 +3,10 @@ import { getCookie, setCookie } from 'hono/cookie';
 import { verify, sign } from 'hono/jwt';
 
 type Env = {
-	YATDLA_KV: KVNamespace;
+	YATDLA_DB: D1Database;
 	JWT_SECRET: string;
+	MIGRATION_SECRET?: string; // For one-time data migration
+	YATDLA_KV: KVNamespace; // For one-time data migration
 	__STATIC_CONTENT: KVNamespace;
 };
 
@@ -25,7 +27,7 @@ type Todo = {
 };
 
 type JournalEntry = {
-	id: string; // date: YYYY-MM-DD
+	id?: string; // date: YYYY-MM-DD. In D1, this will be the 'date' column.
 	userId: string;
 	text: string;
 	createdAt: string;
@@ -33,7 +35,7 @@ type JournalEntry = {
 };
 
 
-const app = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const app = new Hono<{ Bindings: Env; Variables: { userId: string; user: User } }>();
 
 // --- UTILITIES ---
 
@@ -87,19 +89,24 @@ app.post('/auth/register', async c => {
 		return c.json({ success: false, message: 'Username and password are required' }, 400);
 	}
 
-	const existingUser = await c.env.YATDLA_KV.get(`user:${username}`);
-	if (existingUser) {
-		return c.json({ success: false, message: 'Username already taken' }, 409);
-	}
-
 	const salt = crypto.getRandomValues(new Uint8Array(16));
 	const hashedPassword = await hashPassword(password, salt);
 	const userId = crypto.randomUUID();
 	const saltHex = u8aToHex(salt);
 
-	const newUser: User = { id: userId, username, hashedPassword, salt: saltHex };
-	await c.env.YATDLA_KV.put(`user:${username}`, JSON.stringify(newUser));
-	await c.env.YATDLA_KV.put(`userid:${userId}`, username);
+	try {
+		await c.env.YATDLA_DB.prepare(
+			'INSERT INTO users (id, username, hashedPassword, salt) VALUES (?, ?, ?, ?)'
+		)
+		.bind(userId, username, hashedPassword, saltHex)
+		.run();
+	} catch (e: any) {
+		if (e.message?.includes('UNIQUE constraint failed')) {
+			return c.json({ success: false, message: 'Username already taken' }, 409);
+		}
+		console.error('Registration error:', e);
+		return c.json({ success: false, message: 'An error occurred during registration' }, 500);
+	}
 
 	return c.json({ success: true, message: 'User registered successfully' });
 });
@@ -110,25 +117,19 @@ app.post('/auth/login', async c => {
 		return c.json({ success: false, message: 'Username and password are required' }, 400);
 	}
 
-	const userString = await c.env.YATDLA_KV.get(`user:${username}`);
-	if (!userString) {
+	const user = await c.env.YATDLA_DB.prepare('SELECT * FROM users WHERE username = ?')
+		.bind(username)
+		.first<User>();
+
+	if (!user) {
 		return c.json({ success: false, message: 'Invalid credentials' }, 401);
 	}
 
-	const user: User = JSON.parse(userString);
 	const salt = hexToU8a(user.salt);
 	const hashedPassword = await hashPassword(password, salt);
 
 	if (!timingSafeEqual(hashedPassword, user.hashedPassword)) {
 		return c.json({ success: false, message: 'Invalid credentials' }, 401);
-	}
-
-	// Lazily create the reverse mapping if it doesn't exist.
-	// This handles users created before this mapping was introduced.
-	const userIdKey = `userid:${user.id}`;
-	const existingUsername = await c.env.YATDLA_KV.get(userIdKey);
-	if (!existingUsername) {
-		await c.env.YATDLA_KV.put(userIdKey, user.username);
 	}
 
 	const payload = { sub: user.id, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }; // 1 day expiry
@@ -166,10 +167,15 @@ app.use('/api/*', async (c, next) => {
 	try {
 		const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
 		const userId = (payload as any)?.sub;
-
 		if (typeof userId !== 'string') {
 			return c.json({ success: false, message: 'Invalid token' }, 401);
 		}
+
+		// Optional: Fetch user and attach to context. This is not strictly necessary
+		// as we have the userId, but can be convenient.
+		// const user = await c.env.YATDLA_DB.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first<User>();
+		// if (!user) return c.json({ success: false, message: 'User not found' }, 401);
+		// c.set('user', user);
 
 		c.set('userId', userId);
 		await next();
@@ -183,28 +189,32 @@ app.use('/api/*', async (c, next) => {
 // Get current user's info
 app.get('/api/me', async c => {
 	const userId = c.get('userId');
-	const username = await c.env.YATDLA_KV.get(`userid:${userId}`);
-	if (!username) {
+	const user = await c.env.YATDLA_DB.prepare('SELECT username FROM users WHERE id = ?')
+		.bind(userId)
+		.first<{ username: string }>();
+
+	if (!user) {
 		return c.json({ success: false, message: 'User not found' }, 404);
 	}
-	return c.json({ username });
+	return c.json({ username: user.username });
 });
 
 // Get all todos for a user
 app.get('/api/todos', async c => {
 	const userId = c.get('userId');
-	const todosString = await c.env.YATDLA_KV.get(`todos:${userId}`);
-	const todos = todosString ? JSON.parse(todosString) : [];
+	const { results: todos } = await c.env.YATDLA_DB.prepare('SELECT * FROM todos WHERE userId = ? ORDER BY createdAt ASC')
+		.bind(userId)
+		.all<Todo>();
 	return c.json(todos);
 });
 
 // Create a new todo
 app.post('/api/todos', async c => {
 	const userId = c.get('userId');
-	const { text, dueDate } = await c.req.json<{ text: string; dueDate?: string }>();
-
-	const todosString = await c.env.YATDLA_KV.get(`todos:${userId}`);
-	const todos: Todo[] = todosString ? JSON.parse(todosString) : [];
+	const { text, dueDate } = await c.req.json<{ text: string; dueDate?: string | null }>();
+	if (!text) {
+		return c.json({ success: false, message: 'Todo text is required' }, 400);
+	}
 
 	const newTodo: Todo = {
 		id: crypto.randomUUID(),
@@ -215,8 +225,11 @@ app.post('/api/todos', async c => {
 		createdAt: new Date().toISOString(),
 	};
 
-	todos.push(newTodo);
-	await c.env.YATDLA_KV.put(`todos:${userId}`, JSON.stringify(todos));
+	await c.env.YATDLA_DB.prepare(
+		'INSERT INTO todos (id, userId, text, completed, dueDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)'
+	)
+	.bind(newTodo.id, newTodo.userId, newTodo.text, newTodo.completed, newTodo.dueDate, newTodo.createdAt)
+	.run();
 
 	return c.json(newTodo, 201);
 });
@@ -231,23 +244,40 @@ app.put('/api/todos/:id', async c => {
 		dueDate?: string | null;
 	}>();
 
-	const todosString = await c.env.YATDLA_KV.get(`todos:${userId}`);
-	if (!todosString) return c.json({ success: false, message: 'Not Found' }, 404);
+	const db = c.env.YATDLA_DB;
 
-	let todos: Todo[] = JSON.parse(todosString);
-	const todoIndex = todos.findIndex(t => t.id === todoId);
+	const updates: string[] = [];
+	const bindings: (string | number | null)[] = [];
 
-	if (todoIndex === -1) {
+	if (text !== undefined) {
+		updates.push('text = ?');
+		bindings.push(text);
+	}
+	if (completed !== undefined) {
+		updates.push('completed = ?');
+		bindings.push(completed ? 1 : 0);
+	}
+	if (dueDate !== undefined) {
+		updates.push('dueDate = ?');
+		bindings.push(dueDate);
+	}
+
+	if (updates.length === 0) {
+		const todo = await db.prepare('SELECT * FROM todos WHERE id = ? AND userId = ?').bind(todoId, userId).first();
+		if (!todo) return c.json({ success: false, message: 'Not Found' }, 404);
+		return c.json(todo);
+	}
+
+	bindings.push(todoId, userId);
+
+	const query = `UPDATE todos SET ${updates.join(', ')} WHERE id = ? AND userId = ? RETURNING *`;
+	const updatedTodo = await db.prepare(query).bind(...bindings).first<Todo>();
+
+	if (!updatedTodo) {
 		return c.json({ success: false, message: 'Not Found' }, 404);
 	}
 
-	// Update fields if they are provided
-	if (text !== undefined) todos[todoIndex].text = text;
-	if (completed !== undefined) todos[todoIndex].completed = completed;
-	if (dueDate !== undefined) todos[todoIndex].dueDate = dueDate;
-
-	await c.env.YATDLA_KV.put(`todos:${userId}`, JSON.stringify(todos));
-	return c.json(todos[todoIndex]);
+	return c.json(updatedTodo);
 });
 
 // Delete a todo
@@ -255,19 +285,11 @@ app.delete('/api/todos/:id', async c => {
 	const userId = c.get('userId');
 	const todoId = c.req.param('id');
 
-	const todosString = await c.env.YATDLA_KV.get(`todos:${userId}`);
-	if (!todosString) {
-		return c.json({ success: false, message: 'Not Found' }, 404);
-	}
+	const { success } = await c.env.YATDLA_DB.prepare('DELETE FROM todos WHERE id = ? AND userId = ?')
+		.bind(todoId, userId)
+		.run();
 
-	let todos: Todo[] = JSON.parse(todosString);
-	const updatedTodos = todos.filter(t => t.id !== todoId);
-
-	if (todos.length === updatedTodos.length) {
-		return c.json({ success: false, message: 'Not Found' }, 404);
-	}
-
-	await c.env.YATDLA_KV.put(`todos:${userId}`, JSON.stringify(updatedTodos));
+	if (!success) return c.json({ success: false, message: 'Delete failed' }, 500);
 	return new Response(null, { status: 204 });
 });
 
@@ -278,12 +300,16 @@ app.get('/api/journal/:date', async c => { // date is YYYY-MM-DD
     const userId = c.get('userId');
     const date = c.req.param('date');
 
-    const entryString = await c.env.YATDLA_KV.get(`journal:${userId}:${date}`);
-    if (!entryString) {
+    const entry = await c.env.YATDLA_DB.prepare('SELECT * FROM journal_entries WHERE userId = ? AND date = ?')
+        .bind(userId, date)
+        .first<JournalEntry>();
+
+    if (!entry) {
         // Return empty text if not found to simplify frontend logic
         return c.json({ text: '' });
     }
-    const entry: JournalEntry = JSON.parse(entryString);
+    // Add the 'id' field for frontend compatibility
+    entry.id = date;
     return c.json(entry);
 });
 
@@ -296,22 +322,23 @@ app.post('/api/journal', async c => {
         return c.json({ success: false, message: 'Date and text are required' }, 400);
     }
 
-    const key = `journal:${userId}:${date}`;
     const now = new Date().toISOString();
 
-    const existingEntryString = await c.env.YATDLA_KV.get(key);
-    let entry: JournalEntry;
+    const query = `
+        INSERT INTO journal_entries (userId, date, text, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(userId, date) DO UPDATE SET
+            text = excluded.text,
+            updatedAt = excluded.updatedAt
+        RETURNING *;
+    `;
+    const result = await c.env.YATDLA_DB.prepare(query)
+        .bind(userId, date, text, now, now)
+        .first<JournalEntry>();
 
-    if (existingEntryString) {
-        entry = JSON.parse(existingEntryString);
-        entry.text = text;
-        entry.updatedAt = now;
-    } else {
-        entry = { id: date, userId, text, createdAt: now, updatedAt: now };
-    }
-
-    await c.env.YATDLA_KV.put(key, JSON.stringify(entry));
-    return c.json({ success: true, entry });
+    // Add the 'id' field for frontend compatibility
+    const entry = { ...result, id: date };
+    return c.json({ success: true, entry: entry });
 });
 
 // Get todos for a specific month (for the calendar)
@@ -325,46 +352,24 @@ app.get('/api/calendar', async c => {
 
     const yearNum = parseInt(year);
     const monthNum = parseInt(month);
+    const monthStr = `${yearNum}-${String(monthNum).padStart(2, '0')}`;
 
     // Fetch todos for the month
-    const todosString = await c.env.YATDLA_KV.get(`todos:${userId}`);
-    const allTodos: Todo[] = todosString ? JSON.parse(todosString) : [];
-    const filteredTodos = allTodos.filter(todo => {
-        if (!todo.dueDate) return false;
-        const todoDate = new Date(todo.dueDate);
-        return todoDate.getUTCFullYear() === yearNum && todoDate.getUTCMonth() === monthNum - 1;
-    });
+    const todosStmt = c.env.YATDLA_DB.prepare(
+        "SELECT * FROM todos WHERE userId = ? AND strftime('%Y-%m', dueDate) = ?"
+    ).bind(userId, monthStr);
 
     // Fetch which days in the month have journal entries
-    const monthPadded = String(monthNum).padStart(2, '0');
-    const prefix = `journal:${userId}:${yearNum}-${monthPadded}-`;
-    const listResult = await c.env.YATDLA_KV.list({ prefix });
-    const journalDays = listResult.keys.map(key => parseInt(key.name.split('-').pop() || '0'));
+    const journalStmt = c.env.YATDLA_DB.prepare(
+        "SELECT date FROM journal_entries WHERE userId = ? AND strftime('%Y-%m', date) = ?"
+    ).bind(userId, monthStr);
 
-    return c.json({ todos: filteredTodos, journalDays });
+    const [todosResult, journalResult] = await c.env.YATDLA_DB.batch([todosStmt, journalStmt]);
+
+    const todos = todosResult.results as Todo[];
+    const journalDays = (journalResult.results as { date: string }[]).map(r => new Date(r.date).getUTCDate());
+
+    return c.json({ todos, journalDays });
 });
-
-
-// --- STATIC ASSET SERVING ---
-
-// app.get('*', async (c) => {
-// 	try {
-// 		return await getAssetFromKV(
-// 			{
-// 				request: c.req.raw,
-// 				waitUntil: (promise) => c.executionCtx.waitUntil(promise),
-// 			},
-// 			{
-// 				ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-// 				ASSET_MANIFEST: assetManifest,
-// 			}
-// 		);
-// 	} catch (e) {
-// 		if (e instanceof NotFoundError) {
-// 			return new Response('Not Found', { status: 404 });
-// 		}
-// 		return new Response('Internal Server Error', { status: 500 });
-// 	}
-// });
 
 export default app;
