@@ -40,7 +40,7 @@ async function login() {
         showToast('Please enter both username and password.', 'error');
         return;
     }
-
+    var resultMessage;
     try {
         const result = await authenticate(username, password, '/auth/login');
         if (result.success) {
@@ -51,16 +51,15 @@ async function login() {
         } else {
             // On failed login, display the error message from the server.
             showToast(`Login failed: ${result.message}`, 'error');
+            resultMessage = result.message;
         }
     } catch (error) {
         console.error('Authentication error:', error);
-        if(!result.message){
-            showToast(`Login failed: ${result.message}`, 'error');
+        if(resultMessage){
+            showToast(`Login failed: ${resultMessage}`, 'error');
             return;
         }
-        else{
-            showToast('An error occurred during login. Please try again.', 'error');
-        }
+        showToast('An error occurred during login. Please try again.', 'error');
     }
 }
 
