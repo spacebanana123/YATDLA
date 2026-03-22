@@ -5,12 +5,15 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "start": "wrangler dev",
+    "fix": "eslint --fix \"**/*.js\"",
+    "lint": "eslint \"**/*.js\""
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240419.0",
     "typescript": "^5.4.5",
-    "wrangler": "^4.76.0"
+    "wrangler": "^4.76.0",
+    "eslint": "^10.1.0"
   },
   "dependencies": {
     "hono": "^4.2.5",

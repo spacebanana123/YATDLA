@@ -20,6 +20,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let state = { todos: [] };
 
+    // Check for a toast message from a previous page (e.g., after login)
+    const toastMessageData = sessionStorage.getItem('toastMessage');
+    if (toastMessageData) {
+        try {
+            const { message, type } = JSON.parse(toastMessageData);
+            showToast(message, type);
+            sessionStorage.removeItem('toastMessage');
+        } catch (e) {
+            console.error('Could not parse toast message:', e);
+            sessionStorage.removeItem('toastMessage'); // Clear invalid data
+        }
+    }
+
+    function showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+    
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+    
+        container.appendChild(toast);
+    
+        // Animate in
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100); // Small delay to allow the element to be in the DOM for transition
+    
+        // Animate out and remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            // Remove the element after the transition is complete
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, duration);
+    }
+
     async function fetchUser() {
         try {
             const response = await fetch('/api/me');
@@ -36,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/todos');
             if (response.status === 401) {
-                alert('Session expired. Please log in again.');
+                showToast('Session expired. Please log in again.', 'error');
                 window.location.href = '/index.html';
                 return;
             }
@@ -47,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTodos(state.todos);
         } catch (error) {
             console.error('Error fetching todos:', error);
-            alert('Could not fetch todos.');
+            showToast('Could not fetch todos.', 'error');
         }
     }
 
@@ -132,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCalendar();
         } catch (error) {
             console.error('Error adding todo:', error);
-            alert('Could not add todo.');
+            showToast('Could not add todo.', 'error');
         }
     });
 
@@ -157,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderCalendar();
         } catch (error) {
             console.error('Error updating todo:', error);
-            alert('Could not update todo.');
+            showToast('Could not update todo.', 'error');
         }
     }
 
@@ -178,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderCalendar();
         } catch (error) {
             console.error('Error deleting todo:', error);
-            alert('Could not delete todo.');
+            showToast('Could not delete todo.', 'error');
         }
     }
 
@@ -201,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dueDate = editTodoDueDate.value;
 
         if (!text) {
-            alert('To-do text cannot be empty.');
+            showToast('To-do text cannot be empty.', 'error');
             return;
         }
 
@@ -227,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderCalendar();
         } catch (error) {
             console.error('Error updating todo:', error);
-            alert('Could not update todo.');
+            showToast('Could not update todo.', 'error');
         }
     }
 
@@ -417,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error saving journal:', error);
-            alert('Could not save journal entry.');
+            showToast('Could not save journal entry.', 'error');
         }
     }
 
@@ -429,14 +465,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const result = await response.json();
             if (result.success) {
-                alert('You have been logged out.');
+                sessionStorage.setItem('toastMessage', JSON.stringify({ message: 'You have been logged out.', type: 'success' }));
                 window.location.href = '/index.html';
             } else {
-                alert('Logout failed. Please try again.');
+                showToast('Logout failed. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error during logout:', error);
-            alert('An error occurred during logout.');
+            showToast('An error occurred during logout.', 'error');
         }
     }
 

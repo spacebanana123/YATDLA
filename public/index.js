@@ -1,6 +1,29 @@
 // A variable for the server address so you can easily change it.
 const SERVER_URL = ''; // The API is on the same origin, so we can use relative paths.
 
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100); // Small delay to allow the element to be in the DOM for transition
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.remove('show');
+        // Remove the element after the transition is complete
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, duration);
+}
+
 /**
  * Core function of this page, called when the form is submitted.
  * It retrieves user credentials and calls the authenticate function.
@@ -14,7 +37,7 @@ async function login() {
 
     // Basic client-side validation
     if (!username || !password) {
-        alert('Please enter both username and password.');
+        showToast('Please enter both username and password.', 'error');
         return;
     }
 
@@ -23,15 +46,15 @@ async function login() {
         if (result.success) {
             // On successful login, you would typically redirect the user
             // to a dashboard or another protected page.
-            alert('Login successful!');
+            sessionStorage.setItem('toastMessage', JSON.stringify({ message: 'Login successful!', type: 'success' }));
             window.location.href = '/dashboard.html'; // Example redirect
         } else {
             // On failed login, display the error message from the server.
-            alert(`Login failed: ${result.message}`);
+            showToast(`Login failed: ${result.message}`, 'error');
         }
     } catch (error) {
         console.error('Authentication error:', error);
-        alert('An error occurred during login. Please try again.');
+        showToast('An error occurred during login. Please try again.', 'error');
     }
 }
 
@@ -47,20 +70,20 @@ async function register() {
 
     // Basic client-side validation
     if (!username || !password) {
-        alert('Please enter both username and password.');
+        showToast('Please enter both username and password.', 'error');
         return;
     }
 
     try {
         const result = await authenticate(username, password, '/auth/register');
         if (result.success) {
-            alert('Registration successful! Please log in.');
+            showToast('Registration successful! Please log in.', 'success');
         } else {
-            alert(`Registration failed: ${result.message}`);
+            showToast(`Registration failed: ${result.message}`, 'error');
         }
     } catch (error) {
         console.error('Registration error:', error);
-        alert('An error occurred during registration. Please try again.');
+        showToast('An error occurred during registration. Please try again.', 'error');
     }
 }
 
@@ -91,6 +114,19 @@ async function authenticate(username, password, endpoint) {
  * Adds event listeners to the input boxes for "Enter" key functionality.
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // Check for a toast message from a previous page (e.g., after logout)
+    const toastMessageData = sessionStorage.getItem('toastMessage');
+    if (toastMessageData) {
+        try {
+            const { message, type } = JSON.parse(toastMessageData);
+            showToast(message, type);
+            sessionStorage.removeItem('toastMessage');
+        } catch (e) {
+            console.error('Could not parse toast message:', e);
+            sessionStorage.removeItem('toastMessage'); // Clear invalid data
+        }
+    }
+
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     // Note: The HTML has buttons with onclick="login()" and onclick="register()"
