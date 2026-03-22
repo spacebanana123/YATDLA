@@ -1,6 +1,7 @@
-import { Hono } from 'hono';
+import { Context, Hono } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { verify, sign } from 'hono/jwt';
+import { BlankInput } from 'hono/types';
 
 type Env = {
 	YATDLA_DB: D1Database;
@@ -81,6 +82,27 @@ function timingSafeEqual(a: string, b: string): boolean {
 	return diff === 0;
 }
 
+async function checkRateLimit(c: Context<{ Bindings: Env; Variables: { userId: string; user: User; }; }, "/auth/register", BlankInput>, identifier: string, maxAttempts: number, windowSeconds: number) {
+    const key = `ratelimit:${identifier}`;
+    const current = await c.env.YATDLA_KV.get(key);
+    const attempts = current ? parseInt(current) : 0;
+    
+    if (attempts >= maxAttempts) {
+        return c.json({ 
+            success: false, 
+            message: 'Too many attempts. Please try again later.' 
+        }, 429);
+    }
+    
+    await c.env.YATDLA_KV.put(
+        key, 
+        (attempts + 1).toString(), 
+        { expirationTtl: windowSeconds }
+    );
+    
+    return null;
+}
+
 // --- AUTHENTICATION ---
 
 app.post('/auth/register', async c => {
@@ -88,6 +110,12 @@ app.post('/auth/register', async c => {
 	if (!username || !password) {
 		return c.json({ success: false, message: 'Username and password are required' }, 400);
 	}
+
+    const clientIP = c.req.header('CF-Connecting-IP') || 'unknown';
+    
+    // Rate limit by IP: 10 attempts per 15 minutes
+    const ipLimit = await checkRateLimit(c, `ip:${clientIP}`, 10, 900);
+    if (ipLimit) return ipLimit;
 
 	const salt = crypto.getRandomValues(new Uint8Array(16));
 	const hashedPassword = await hashPassword(password, salt);
@@ -116,6 +144,16 @@ app.post('/auth/login', async c => {
 	if (!username || !password) {
 		return c.json({ success: false, message: 'Username and password are required' }, 400);
 	}
+
+    const clientIP = c.req.header('CF-Connecting-IP') || 'unknown';
+    
+    // Rate limit by IP: 10 attempts per 15 minutes
+    const ipLimit = await checkRateLimit(c, `ip:${clientIP}`, 10, 900);
+    if (ipLimit) return ipLimit;
+    
+    // Rate limit by username: 5 attempts per hour
+    const userLimit = await checkRateLimit(c, `user:${username}`, 5, 3600);
+    if (userLimit) return userLimit;
 
 	const user = await c.env.YATDLA_DB.prepare('SELECT * FROM users WHERE username = ?')
 		.bind(username)
