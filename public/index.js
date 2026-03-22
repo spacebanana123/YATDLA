@@ -43,15 +43,12 @@ async function login() {
     var resultMessage;
     try {
         const result = await authenticate(username, password, '/auth/login');
+        resultMessage = result.message;
         if (result.success) {
             // On successful login, you would typically redirect the user
             // to a dashboard or another protected page.
             sessionStorage.setItem('toastMessage', JSON.stringify({ message: 'Login successful!', type: 'success' }));
             window.location.href = '/dashboard.html'; // Example redirect
-        } else {
-            // On failed login, display the error message from the server.
-            showToast(`Login failed: ${result.message}`, 'error');
-            resultMessage = result.message;
         }
     } catch (error) {
         console.error('Authentication error:', error);
