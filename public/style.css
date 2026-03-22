@@ -9,32 +9,37 @@
 --off-white: #f2f3f4;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 h1 {
-  margin-block: 0.67em;
   font-size: 2em;
-  padding: 0%;
-  margin: 0%;
+  margin: 0 0 0.67em 0;
 }
 
 body {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
 	font-family: Arial, Helvetica, sans-serif;
 	color:var(--midnight-violet);
 	line-height:1.6;
+	margin: 0;
 }
 
 .button {
 	border: 2px solid var(--midnight-violet);
 	background-color: var(--palm-leaf);
 	color: var(--glamour-white);
-	padding: 1% 1%;
-	margin: 0.5% 0.5%;
+	padding: 0.5em 1em;
+	margin: 0.5em 0;
 	text-align: center;
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
 	cursor: pointer;
 	border-radius: 10px;
-	width: 7.5%;
 }
 .button:hover{
 	background-color: var(--muted-olive);
@@ -43,12 +48,13 @@ body {
 .container{
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
 	align-items: center;
 	flex-grow: 1;
-	flex-basis: 100%;
 }
-.container div{
-	width: 75%;
+/* Make this selector more specific to only target the direct child div */
+.container > div{
+	width: 100%;
 	align-self: center;
 	background-color: var(--off-white);
 	margin: 10px;
@@ -57,13 +63,334 @@ body {
 	text-align: center;
 }
 
+.header-with-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0.67em; /* Match h1 margin */
+    position: relative;
+}
+
+.header-with-button h1 {
+    margin: 0;
+}
+
+.header-with-button .button {
+    margin: 0;
+    position: absolute;
+    right: 0;
+}
+
+.auth-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1em;
+}
+
+/* Style for the divs inside the form */
+.container form div {
+	display: flex;
+	align-items: center;
+	text-align: left;
+	gap: 10px; /* Adds space between label and input */
+}
+
+/* Give labels a fixed width to align input boxes */
+.container form label {
+	width: 80px;
+	flex-shrink: 0; /* Prevents the label from shrinking */
+}
+
 .inputBox{
 	border: 2px solid var(--midnight-violet);
-	padding: 1% 1%;
+	padding: 0.5em 1em;
 	color: var(--midnight-violet);
-	margin: 0.5% 0.5%;
+	margin: 0.5em 0;
 	background-color: var(--muted-olive);
 	border-radius: 10px;
 	font-size: 16px;
-	width: 75%;
+	flex-grow: 1; /* Allow input to fill remaining space */
+}
+
+.inputBox:focus {
+	outline: 2px solid var(--palm-leaf);
+	background-color: var(--glamour-white);
+}
+
+#new-todo-form .add-todo-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#new-todo-form .inputBox {
+    margin: 0;
+}
+
+#new-todo-form .button {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+#todo-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#todo-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--celadon);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.todo-text {
+    flex-grow: 1;
+    text-align: left;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.todo-buttons {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.todo-delete-button {
+    background-color: var(--espresso);
+}
+
+/* --- Calendar Styles --- */
+
+#calendar {
+    width: 100%;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+}
+
+.calendar-header h2 {
+    margin: 0;
+}
+
+.calendar-header .button {
+    margin: 0;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    background-color: var(--midnight-violet);
+    border: 2px solid var(--midnight-violet);
+    border-radius: 5px;
+    overflow: hidden; /* Ensures inner border radius is clipped */
+}
+
+.calendar-day-header {
+    font-weight: bold;
+    text-align: center;
+    padding: 0.5em;
+    background-color: var(--palm-leaf);
+    color: var(--glamour-white);
+}
+
+.calendar-day {
+    background-color: var(--glamour-white);
+    min-height: 100px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0; /* Prevents long unbreakable words from stretching the grid cell */
+}
+
+.day-number {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: var(--espresso);
+    align-self: center;
+}
+
+.calendar-todo {
+    font-size: 0.75em;
+    padding: 2px 4px;
+    background-color: var(--muted-olive);
+    color: var(--midnight-violet);
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-todo.completed {
+    text-decoration: line-through;
+    background-color: var(--celadon);
+}
+
+/* --- Journal / Modal Styles --- */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--glamour-white);
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-title {
+    margin-top: 0;
+}
+
+.modal-content #journal-text {
+    width: 100%;
+    min-height: 200px;
+    margin-bottom: 1em;
+    resize: vertical;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-buttons .button {
+    margin: 0;
+}
+
+.calendar-day.has-journal .day-number {
+    font-weight: bold;
+    color: var(--glamour-white);
+    background-color: var(--palm-leaf);
+    border-radius: 50%;
+    width: 1.5em;
+    height: 1.5em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.calendar-day:hover {
+    cursor: pointer;
+    background-color: var(--celadon);
+}
+
+.edit-todo-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1em;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px; /* Adjust base font size for better readability */
+    }
+
+    .container {
+        padding: 0 5px;
+    }
+
+    .container > div {
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    h1 {
+        font-size: 1.6em;
+    }
+
+    /* --- Login/Register Form --- */
+    .container form div:not(.add-todo-controls):not(.auth-buttons) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+    }
+
+    .container form label {
+        width: auto;
+        text-align: left;
+    }
+
+    /* --- Dashboard: Add To-Do Form --- */
+    #new-todo-form .add-todo-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* --- Dashboard: To-Do List --- */
+    #todo-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .todo-text {
+        margin-right: 0;
+    }
+
+    .todo-buttons {
+        align-self: flex-end;
+    }
+
+    /* --- Dashboard: Calendar --- */
+    .calendar-day {
+        min-height: 80px; /* Make calendar cells shorter */
+    }
+
+    /* --- Modals --- */
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .modal-title {
+        font-size: 1.4em;
+    }
+
+    .edit-todo-form {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Further adjustments for very small screens */
+    .modal-content {
+        padding: 10px;
+    }
+
+    .modal-title {
+        font-size: 1.2em;
+        margin-bottom: 0.5em;
+    }
+
+    .modal-content #journal-text {
+        min-height: 150px; /* Reduce textarea height */
+    }
 }

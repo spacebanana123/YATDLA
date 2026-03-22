@@ -1,10 +1,16 @@
-"$schema" = "./node_modules/wrangler/config-schema.json"
-name = "yatdla"
-main = "./src/server.js"
-# Set this to today's date
-compatibility_date = "2026-03-17"
-compatibility_flags = [ "nodejs_compat" ]
+name = "yatdla-backend"
+main = "src/index.ts"
+compatibility_date = "2024-03-20"
 
-[assets]
-directory = "./public/"
-binding = "ASSETS"
+# Binding for storing users and todos
+[[kv_namespaces]]
+binding = "YATDLA_KV"
+id = "355e30edc74f49b695f50769567a2ae9" # TODO: Create a KV namespace and replace this ID
+
+[vars]
+# This is just a default for local dev.
+# In production, you should set this secret using `wrangler secret put JWT_SECRET`
+JWT_SECRET = "a-very-secure-secret-for-local-development-only"
+
+[site]
+bucket = "./public"

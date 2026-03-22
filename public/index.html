@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		<title>YATDLA</title>
-		<link rel="stylesheet" href="style.css">
-	</head>
-	<body>
-		<div class="container">
-			<div>
-				<h1>Login</h1>
-			</div>
-			<div>
-				<input class="inputBox" id="username" placeholder="Username" style="width: 84%;"> 
-				<input class="inputBox" id="password" placeholder="Password"> 
-				<input type="button" class="button" value="Submit" onclick="login()">
-			</div>
-		</div>
-	</body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - YATDLA</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1>Welcome to YATDLA</h1>
+            <p>Yet Another To-Do List App</p>
+            <form onsubmit="event.preventDefault();">
+                <div>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" class="inputBox" required>
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" class="inputBox" required>
+                </div>
+                <div class="auth-buttons">
+                    <button type="button" class="button" onclick="login()">Login</button>
+                    <button type="button" class="button" onclick="register()">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="/index.js"></script>
+</body>
 </html>

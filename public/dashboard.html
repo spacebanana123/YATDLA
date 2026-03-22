@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - YATDLA</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <div>
+            <div class="header-with-button">
+                <h1 id="main-header">Your To-Do List</h1>
+                <button id="logout-button" class="button">Logout</button>
+            </div>
+            <form id="new-todo-form" onsubmit="event.preventDefault();">
+                <div class="add-todo-controls">
+                    <input type="text" id="new-todo-text" class="inputBox" placeholder="What needs to be done?" required>
+                    <input type="date" id="new-todo-due-date" class="inputBox">
+                    <button type="submit" class="button">Add To-Do</button>
+                </div>
+            </form>
+            <ul id="todo-list">
+                <!-- To-do items will be rendered here -->
+            </ul>
+        </div>
+        <div>
+            <h1>Calendar</h1>
+            <div id="calendar"></div>
+        </div>
+    </div>
+    <script src="/dashboard.js"></script>
+    <div id="edit-todo-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title">Edit To-Do</h2>
+            <div class="edit-todo-form">
+                <input type="text" id="edit-todo-text" class="inputBox" required>
+                <input type="date" id="edit-todo-due-date" class="inputBox">
+            </div>
+            <div class="modal-buttons">
+                <button id="save-todo-button" class="button">Save</button>
+                <button id="close-edit-todo-button" class="button">Close</button>
+            </div>
+            <input type="hidden" id="edit-todo-id">
+        </div>
+    </div>
+    <div id="journal-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title">Journal for <span id="journal-date-display"></span></h2>
+            <textarea id="journal-text" class="inputBox" placeholder="Write your thoughts for the day..."></textarea>
+            <div class="modal-buttons">
+                <button id="save-journal-button" class="button">Save</button>
+                <button id="close-journal-button" class="button">Close</button>
+            </div>
+            <input type="hidden" id="journal-date-hidden">
+        </div>
+    </div>
+</body>
+</html>

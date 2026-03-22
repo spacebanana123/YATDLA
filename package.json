@@ -1,24 +1,19 @@
 {
   "name": "yatdla",
   "version": "1.0.0",
-  "description": "Yet Another To-Do List App",
-  "type": "module",
   "private": true,
-  "main": "src/server.js",
   "scripts": {
-    "start": "wrangler dev",
-    "fix": "eslint --fix \"**/*.js\"",
-    "lint": "eslint \"**/*.js\""
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
   },
-  "keywords": [],
-  "author": "Matt Peng",
-  "license": "MIT",
   "devDependencies": {
-    "@eslint/css": "^1.0.0",
-    "@eslint/js": "^10.0.1",
-    "@eslint/json": "^1.1.0",
-    "eslint": "^10.0.3",
-    "globals": "^17.4.0",
-    "wrangler": "^4.75.0"
+    "@cloudflare/workers-types": "^4.20240419.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^4.76.0"
+  },
+  "dependencies": {
+    "hono": "^4.2.5",
+    "jose": "^5.2.4"
   }
 }
