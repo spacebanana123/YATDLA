@@ -54,7 +54,13 @@ async function login() {
         }
     } catch (error) {
         console.error('Authentication error:', error);
-        showToast('An error occurred during login. Please try again.', 'error');
+        if(!result.message){
+            showToast(`Login failed: ${result.message}`, 'error');
+            return;
+        }
+        else{
+            showToast('An error occurred during login. Please try again.', 'error');
+        }
     }
 }
 
