@@ -390,6 +390,12 @@ app.get('/api/calendar', async c => {
 
     const yearNum = parseInt(year);
     const monthNum = parseInt(month);
+
+	//Checks against SQL injection as we are packing in a monthStr by hand.
+	if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+    	return c.json({ error: 'Invalid parameters' }, 400);
+	}
+
     const monthStr = `${yearNum}-${String(monthNum).padStart(2, '0')}`;
 
     // Fetch todos for the month
