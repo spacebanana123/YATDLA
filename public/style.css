@@ -148,6 +148,44 @@ body {
     margin-bottom: 5px;
 }
 
+.todo-controls {
+    text-align: left;
+    margin-top: 1rem;
+    margin-bottom: 1rem; 
+    padding: 5px;       
+    border: 1px solid var(--midnight-violet);  
+    border-radius: 5px;   
+    background-color: var(--off-white);  
+    width: 14%;
+}
+
+#hide-completed-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--midnight-violet);
+    border-radius: 5px;
+    background-color: var(--glamour-white);
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+#hide-completed-toggle:checked {
+    background-color: var(--palm-leaf);
+}
+
+#hide-completed-toggle:checked::after {
+    content: '\2713'; 
+    font-size: 14px;
+    color: var(--glamour-white);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
 .todo-text {
     flex-grow: 1;
     text-align: left;

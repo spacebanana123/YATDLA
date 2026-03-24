@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editTodoId = document.getElementById('edit-todo-id');
     const saveTodoButton = document.getElementById('save-todo-button');
     const closeEditTodoButton = document.getElementById('close-edit-todo-button');
+    const hideCompletedToggle = document.getElementById('hide-completed-toggle');
 
     let state = { todos: [] };
 
@@ -137,8 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render todos to the list
     function renderTodos(todos) {
+        const hideCompleted = hideCompletedToggle.checked;
         todoList.innerHTML = '';
-        const sortedTodos = [...todos].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const filteredTodos = hideCompleted ? todos.filter(todo => !todo.completed) : todos;
+        const sortedTodos = [...filteredTodos].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         for (const todo of sortedTodos) {
             const li = createTodoListItem(todo);
             todoList.appendChild(li);
@@ -187,9 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = state.todos.findIndex(t => t.id === id);
             if (index !== -1) state.todos[index] = updatedTodo;
 
-            // Update the specific item in the DOM
-            const oldLi = todoList.querySelector(`li[data-id="${id}"]`);
-            if (oldLi) oldLi.replaceWith(createTodoListItem(updatedTodo));
+            renderTodos(state.todos);
             await renderCalendar();
         } catch (error) {
             console.error('Error updating todo:', error);
@@ -290,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/api/calendar?year=${year}&month=${month + 1}`);
             if (response.status === 401) {
                 // The main fetchTodos function already handles this, but good to be safe
-                alert('Session expired. Please log in again.');
+                showToast('Session expired. Please log in again.', 'error');
                 window.location.href = '/index.html';
                 return;
             }
@@ -484,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveTodoButton.onclick = saveTodo;
     editTodoModal.addEventListener('click', (e) => e.target === editTodoModal && closeEditTodoModal());
     logoutButton.addEventListener('click', logout);
+    hideCompletedToggle.addEventListener('change', () => renderTodos(state.todos));
 
     renderCalendar();
 });
