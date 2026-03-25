@@ -64,21 +64,26 @@ body {
 }
 
 .header-with-button {
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Left spacer, h1, right spacer for button */
     align-items: center;
-    margin-bottom: 0.67em; /* Match h1 margin */
-    position: relative;
+    margin: 1em;
 }
 
 .header-with-button h1 {
+    grid-column: 2 / 3; /* Place h1 in the middle column */
+    text-align: center;
+    padding-right: 5px;
     margin: 0;
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
 }
 
 .header-with-button .button {
     margin: 0;
-    position: absolute;
-    right: 0;
+    grid-column: 3 / 4; /* Place button in the third column */
+    justify-self: end; /* Align button to the end of its grid cell */
 }
 
 .auth-buttons {
@@ -148,15 +153,20 @@ body {
     margin-bottom: 5px;
 }
 
-.todo-controls {
+.display-controls{
+    margin-top: 1em;
     text-align: left;
-    margin-top: 1rem;
-    margin-bottom: 1rem; 
+    height: auto;
+}
+
+.todo-controls {
+    text-align: center;
     padding: 5px;       
     border: 1px solid var(--midnight-violet);  
     border-radius: 5px;   
     background-color: var(--off-white);  
-    width: 14%;
+    width: auto; /* Let the box fit its content */
+    display: inline-block; /* Center it via parent's text-align */
 }
 
 #hide-completed-toggle {
@@ -396,6 +406,7 @@ body {
     .todo-buttons {
         align-self: flex-end;
     }
+
 
     /* --- Dashboard: Calendar --- */
     .calendar-day {
