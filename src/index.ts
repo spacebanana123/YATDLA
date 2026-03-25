@@ -6,8 +6,7 @@ import { BlankInput } from 'hono/types';
 type Env = {
 	YATDLA_DB: D1Database;
 	JWT_SECRET: string;
-	MIGRATION_SECRET?: string; // For one-time data migration
-	YATDLA_KV: KVNamespace; // For one-time data migration
+	YATDLA_KV: KVNamespace; 
 	__STATIC_CONTENT: KVNamespace;
 };
 
