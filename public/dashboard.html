@@ -23,6 +23,15 @@
 			</form>
 			<div class="display-controls">
 				<div class="todo-controls">
+					<label for="sort-todos-select">Sort by:</label>
+					<select id="sort-todos-select" class="inputBox">
+						<option value="date-asc">Due Date (Earliest First)</option>
+						<option value="date-desc">Due Date (Latest First)</option>
+						<option value="name-asc">Name (A-Z)</option>
+						<option value="name-desc">Name (Z-A)</option>
+					</select>
+				</div>
+				<div class="todo-controls">
 					<label>
 						<input type="checkbox" id="hide-completed-toggle" checked>
 						Hide completed items

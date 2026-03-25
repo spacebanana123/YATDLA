@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const saveTodoButton = document.getElementById('save-todo-button');
 	const closeEditTodoButton = document.getElementById('close-edit-todo-button');
 	const hideCompletedToggle = document.getElementById('hide-completed-toggle');
+	const sortTodosSelect = document.getElementById('sort-todos-select');
 
 	let state = { todos: [] };
 
@@ -141,7 +142,27 @@ document.addEventListener('DOMContentLoaded', () => {
 		const hideCompleted = hideCompletedToggle.checked;
 		todoList.innerHTML = '';
 		const filteredTodos = hideCompleted ? todos.filter(todo => !todo.completed) : todos;
-		const sortedTodos = [...filteredTodos].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+		const sortBy = sortTodosSelect.value;
+		const sortedTodos = [...filteredTodos].sort((a, b) => {
+			switch (sortBy) {
+				case 'date-desc':
+					if(b.dueDate.localeCompare(a.dueDate) === 0){
+						return new Date(b.createdAt) - new Date(a.createdAt);
+					}
+					return new Date(b.dueDate) - new Date(a.dueDate);
+				case 'name-asc':
+					return a.text.localeCompare(b.text);
+				case 'name-desc':
+					return b.text.localeCompare(a.text);
+				case 'date-asc':
+				default:
+					if(b.dueDate.localeCompare(a.dueDate) === 0){
+						return new Date(a.createdAt) - new Date(b.createdAt);
+					}
+					return new Date(a.dueDate) - new Date(b.dueDate);
+			}
+		});
+
 		for (const todo of sortedTodos) {
 			const li = createTodoListItem(todo);
 			todoList.appendChild(li);
@@ -164,8 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!response.ok) throw new Error('Failed to add todo');
 			const newTodo = await response.json();
 			state.todos.push(newTodo);
-			const li = createTodoListItem(newTodo);
-			todoList.appendChild(li); // Append new item instead of full re-render
+			renderTodos(state.todos); // Re-render to apply sorting
 			newTodoText.value = '';
 			newTodoDueDate.value = '';
 			renderCalendar();
@@ -256,10 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const index = state.todos.findIndex(t => t.id === id);
 			if (index !== -1) state.todos[index] = { ...state.todos[index], ...updatedTodo };
 
-			// Update the specific item in the DOM
-			const oldLi = todoList.querySelector(`li[data-id="${id}"]`);
-			if (oldLi) oldLi.replaceWith(createTodoListItem(state.todos[index]));
-
+			renderTodos(state.todos); // Re-render to apply sorting
 			closeEditTodoModal();
 			await renderCalendar();
 		} catch (error) {
@@ -486,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	editTodoModal.addEventListener('click', (e) => e.target === editTodoModal && closeEditTodoModal());
 	logoutButton.addEventListener('click', logout);
 	hideCompletedToggle.addEventListener('change', () => renderTodos(state.todos));
+	sortTodosSelect.addEventListener('change', () => renderTodos(state.todos));
 
 	renderCalendar();
 });

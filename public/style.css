@@ -155,18 +155,22 @@ body {
 
 .display-controls{
 	margin-top: 1em;
-	text-align: left;
+	display: flex;
+	align-items: stretch;
+	gap: 1em;
+	flex-wrap: wrap;
 	height: auto;
 }
 
 .todo-controls {
-	text-align: center;
 	padding: 5px;       
 	border: 1px solid var(--midnight-violet);  
 	border-radius: 5px;   
 	background-color: var(--off-white);  
-	width: auto; /* Let the box fit its content */
-	display: inline-block; /* Center it via parent's text-align */
+	width: auto;
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
 }
 
 #hide-completed-toggle {
@@ -195,6 +199,14 @@ body {
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
+}
+
+.todo-controls .inputBox {
+	margin: 0;
+}
+
+#sort-todos-select {
+	font-size: 14px;
 }
 .todo-text {
 	flex-grow: 1;
