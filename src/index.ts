@@ -252,6 +252,9 @@ app.post('/api/todos', async c => {
 	if (!text) {
 		return c.json({ success: false, message: 'Todo text is required' }, 400);
 	}
+	if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+		return c.json({ success: false, message: 'Invalid due date format' }, 400);
+	}
 
 	const newTodo: Todo = {
 		id: crypto.randomUUID(),
