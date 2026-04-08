@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		todoList.innerHTML = '';
 		const filteredTodos = hideCompleted ? todos.filter(todo => !todo.completed) : todos;
 		if(filteredTodos.length === 1){
-			const li = createTodoListItem(todo);
+			const li = createTodoListItem(filteredTodos[0]);
 			todoList.appendChild(li);
 			return;
 		}
