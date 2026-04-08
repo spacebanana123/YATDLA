@@ -142,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		const hideCompleted = hideCompletedToggle.checked;
 		todoList.innerHTML = '';
 		const filteredTodos = hideCompleted ? todos.filter(todo => !todo.completed) : todos;
+		if(filteredTodos.length === 1){
+			const li = createTodoListItem(todo);
+			todoList.appendChild(li);
+			return;
+		}
 		const sortBy = sortTodosSelect.value;
 		const sortedTodos = [...filteredTodos].sort((a, b) => {
 			switch (sortBy) {
