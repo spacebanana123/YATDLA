@@ -266,13 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
 			showToast('To-do text cannot be empty.', 'error');
 			return;
 		}
+		if (!dueDate) {
+			showToast('Due date cannot be empty.', 'error');
+			return;
+		}
 
 		try {
 			// We can reuse the PUT endpoint. We are not updating the 'completed' status here.
 			const response = await fetch(`/api/todos/${id}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text, dueDate: dueDate || null }),
+				body: JSON.stringify({ text, dueDate: dueDate}),
 			});
 			if (!response.ok) throw new Error('Failed to update todo');
 			const updatedTodo = await response.json();
