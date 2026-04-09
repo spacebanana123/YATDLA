@@ -249,13 +249,7 @@ app.get('/api/todos', async c => {
 app.post('/api/todos', async c => {
 	const userId = c.get('userId');
 	const { text, dueDate } = await c.req.json<{ text: string; dueDate?: string | null }>();
-	if (!text) {
-		return c.json({ success: false, message: 'Todo text is required' }, 400);
-	}
-	if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-		return c.json({ success: false, message: 'Invalid due date format' }, 400);
-	}
-
+	
 	const newTodo: Todo = {
 		id: crypto.randomUUID(),
 		userId,
@@ -264,6 +258,14 @@ app.post('/api/todos', async c => {
 		dueDate: dueDate || null,
 		createdAt: new Date().toISOString(),
 	};
+
+	if (!newTodo.dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(newTodo.dueDate)) {
+		return c.json({ success: false, message: 'Invalid due date format' }, 400);
+	}
+
+	if (!newTodo.text) {
+		return c.json({ success: false, message: 'Text is required' }, 400);
+	}
 
 	await c.env.YATDLA_DB.prepare(
 		'INSERT INTO todos (id, userId, text, completed, dueDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)'
